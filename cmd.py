@@ -1,3 +1,4 @@
+from pathlib import Path
 from collections import Counter
 
 import numpy as np
@@ -27,9 +28,15 @@ if __name__ == "__main__":
             age_unit = age / 1e9 if age >= 1e9 else age / 1e6
             item = df[df.age == age]
             ratio = 1 + np.random.normal(0, 0.02, len(item))
+            item = item.assign(ratio=ratio)
 
             fig, ax = plt.subplots(1, 1)
-            im = ax.scatter(10 ** item.logTe * ratio, np.log10(10 ** item.logL * ratio), s=(4 / item.logg) ** 2, c=item.Mass, vmin=1, vmax=7.2) 
+            ax.scatter(10 ** item.logTe * ratio, np.log10(10 ** item.logL * item.ratio), s=(4 / item.logg) ** 2, facecolors='none', edgecolors='grey', alpha=0.5) 
+            item_sel = item[(item.logg >= 3.5) & (item.Mini > 1.6)]
+            ratio_2 = np.random.random(len(item_sel))
+            im = ax.scatter(10 ** item_sel.logTe * item_sel.ratio * (0.9 + 0.1 * ratio_2 ** 2), np.log10(10 ** item_sel.logL * item_sel.ratio) * (0.8 +  0.2 * ratio_2 ** 2), s=(4 / item_sel.logg) ** 2, c=item_sel.Mass, vmin=1, vmax=7.2) 
+            item_sel = item[(item.logg < 3.5) | (item.Mini < 1.6)] 
+            ax.scatter(10 ** item_sel.logTe * item_sel.ratio, np.log10(10 ** item_sel.logL * item_sel.ratio), s=(4 / item_sel.logg) ** 2, c=item_sel.Mass, vmin=1, vmax=7.2) 
             ax.plot(10 ** item_p_sort.logTe, item_p_sort.logL, c='red')
             for mass in [3.0, 2.5, 2.0, 1.5, 1.0]:
                 item_p_mass = item_p_sort.loc[np.abs(item_p_sort.Mass - mass).idxmin()]
@@ -46,6 +53,10 @@ if __name__ == "__main__":
             plt.setp(ax.xaxis.get_minorticklabels(), rotation=45)
             plt.xticks(rotation=45, ha='right')
             # plt.show()
-            plt.savefig('figure/cmd-{0:0>3d}.png'.format(int(age/1e7)), bbox_inches='tight')
+            output_folder = "figure_4"
+            p = Path(output_folder)
+            if not p.is_dir():
+                p.mkdir(parents=True)
+            plt.savefig('{0}/cmd-{1:0>3d}.png'.format(output_folder, int(age/1e7)), bbox_inches='tight')
             plt.close()
 
